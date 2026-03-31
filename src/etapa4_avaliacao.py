@@ -1,9 +1,3 @@
-"""
-Etapa 4 — Avaliação dos Resultados
-  4.1 Métricas de desempenho: Matriz de Confusão, Precisão, Recall, F1-Score
-  4.2 Testes e Comparações: Boxplots de múltiplas execuções + tabela resumo
-"""
-
 import os
 import numpy as np
 import pandas as pd
@@ -22,10 +16,6 @@ CORES_MODELOS = {
     "SVM (RBF, OvO)":   "#7B68EE",
 }
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 4.1  Matrizes de Confusão
-# ─────────────────────────────────────────────────────────────────────────────
 def _plot_matrizes_confusao(resultados: dict):
     nomes = list(resultados.keys())
     fig, axes = plt.subplots(1, len(nomes), figsize=(5 * len(nomes), 4))
@@ -35,13 +25,11 @@ def _plot_matrizes_confusao(resultados: dict):
     for ax, nome in zip(axes, nomes):
         cm = resultados[nome]["cm_agregada"]
         classes = resultados[nome]["classes"]
-        # Normaliza por linha (recall por classe)
         cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
         sns.heatmap(cm_norm, annot=True, fmt=".2f", cmap="Blues",
                     xticklabels=classes, yticklabels=classes,
                     ax=ax, linewidths=0.5, cbar=False,
                     annot_kws={"size": 11})
-        # Valores absolutos no título
         total = cm.sum()
         corretos = np.trace(cm)
         ax.set_title(f"{nome}\n(acerto: {corretos}/{total})",
@@ -55,10 +43,6 @@ def _plot_matrizes_confusao(resultados: dict):
     plt.close(fig)
     print("  ✔ Matrizes de confusão salvas.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 4.2  Boxplots de desempenho (múltiplas execuções)
-# ─────────────────────────────────────────────────────────────────────────────
 def _plot_boxplots_comparativo(resultados: dict):
     metricas_plot = ["acuracia", "f1_macro", "precisao", "recall"]
     titulos = ["Acurácia", "F1-Score (Macro)", "Precisão (Macro)", "Revocação (Macro)"]
@@ -90,10 +74,6 @@ def _plot_boxplots_comparativo(resultados: dict):
     plt.close(fig)
     print("  ✔ Boxplots comparativos salvos.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# F1 por classe
-# ─────────────────────────────────────────────────────────────────────────────
 def _plot_f1_por_classe(resultados: dict):
     nomes   = list(resultados.keys())
     classes = resultados[nomes[0]]["classes"]
@@ -125,10 +105,6 @@ def _plot_f1_por_classe(resultados: dict):
     plt.close(fig)
     print("  ✔ F1 por classe salvo.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Tempo computacional
-# ─────────────────────────────────────────────────────────────────────────────
 def _plot_tempo_computacional(resultados: dict):
     nomes  = list(resultados.keys())
     tempos_med = [np.mean(resultados[n]["tempo_treino"]) * 1000 for n in nomes]
@@ -150,10 +126,6 @@ def _plot_tempo_computacional(resultados: dict):
     plt.close(fig)
     print("  ✔ Gráfico de tempo computacional salvo.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Tabela resumo final
-# ─────────────────────────────────────────────────────────────────────────────
 def _imprimir_tabela_resumo(resultados: dict):
     print("\n" + "═" * 72)
     print("  TABELA RESUMO — COMPARAÇÃO DOS ALGORITMOS")
@@ -170,7 +142,6 @@ def _imprimir_tabela_resumo(resultados: dict):
         print(f"{nome:<24} {acc:>10} {f1:>10} {pre:>10} {rec:>10} {t:>10}")
     print("═" * 72)
 
-    # Relatório por classe (modelo de melhor F1)
     melhor = max(resultados, key=lambda n: np.mean(resultados[n]["f1_macro"]))
     print(f"\n  Relatório detalhado do melhor modelo ({melhor}):")
     print("─" * 72)
@@ -181,7 +152,6 @@ def _imprimir_tabela_resumo(resultados: dict):
                   f"recall={vals['recall']:.3f}  f1={vals['f1-score']:.3f}  "
                   f"support={int(vals['support'])}")
     print("═" * 72)
-
 
 def _salvar_csv_resultados(resultados: dict):
     rows = []
@@ -201,10 +171,6 @@ def _salvar_csv_resultados(resultados: dict):
     df.to_csv(csv_path, index=False)
     print(f"  ✔ Resultados salvos em '{csv_path}'")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Função principal da etapa
-# ─────────────────────────────────────────────────────────────────────────────
 def gerar_relatorio_final(resultados: dict):
     _plot_matrizes_confusao(resultados)
     _plot_boxplots_comparativo(resultados)

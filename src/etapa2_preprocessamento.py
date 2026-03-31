@@ -14,7 +14,6 @@ OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def tratar_missing(X: pd.DataFrame) -> pd.DataFrame:
-
     total = len(X)
     colunas_ruim = [c for c in X.columns if X[c].isnull().sum() / total > 0.50]
     if colunas_ruim:
@@ -32,9 +31,7 @@ def tratar_missing(X: pd.DataFrame) -> pd.DataFrame:
     return X
 
 def detectar_e_remover_outliers(X: pd.DataFrame, y: pd.Series):
-
     _boxplot_outliers(X, prefixo="antes", titulo="Boxplots ANTES da remoção de outliers")
-
     mask_ok = pd.Series([True] * len(X), index=X.index)
     for col in X.columns:
         mu = X[col].mean()
@@ -68,7 +65,6 @@ def _boxplot_outliers(X: pd.DataFrame, prefixo: str, titulo: str):
     plt.close(fig)
 
 def codificar_categoricos(X: pd.DataFrame) -> pd.DataFrame:
-
     cat_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
     if cat_cols:
         print(f"  [2.3] One-Hot Encoding aplicado em: {cat_cols}")

@@ -1,13 +1,3 @@
-"""
-Etapa 3 — Metodologia Experimental
-Três algoritmos de paradigmas distintos:
-  1. KNN  (K-Nearest Neighbors) — baseado em similaridade/distância
-  2. Decision Tree / Random Forest — baseado em regras de entropia
-    3. SVM (kernel RBF, one-vs-one) — margem máxima com fronteiras não lineares
-
-Estratégia de divisão: Stratified K-Fold (k=10) com normalização Z-score
-aplicada DENTRO de cada fold para evitar data leakage.
-"""
 
 import time
 import numpy as np
@@ -24,15 +14,7 @@ from sklearn.metrics import (
 
 SEED_FIXA = 42
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Configuração dos algoritmos
-# ─────────────────────────────────────────────────────────────────────────────
 def _criar_modelos():
-    """
-    Retorna dicionário com os três classificadores e seus parâmetros.
-    Hiperparâmetros escolhidos para bom desempenho geral no SDSS.
-    """
     return {
         "KNN": KNeighborsClassifier(
             n_neighbors=7,
@@ -57,19 +39,9 @@ def _criar_modelos():
         ),
     }
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Loop de treinamento com Stratified K-Fold
-# ─────────────────────────────────────────────────────────────────────────────
 def _avaliar_modelo_kfold(nome, modelo, X: np.ndarray, y: np.ndarray,
                            classes: list, n_splits: int = 10,
                            n_repeticoes: int = 5) -> dict:
-    """
-    Executa múltiplas repetições de k-fold para obter distribuição estável
-    (especialmente útil para comparação robusta entre algoritmos).
-
-    Retorna métricas por fold/repetição para análise estatística posterior.
-    """
     le = LabelEncoder()
     y_enc = le.fit_transform(y)
     classes_enc = le.transform(classes)
@@ -95,12 +67,9 @@ def _avaliar_modelo_kfold(nome, modelo, X: np.ndarray, y: np.ndarray,
             X_tr, X_te = X[idx_tr], X[idx_te]
             y_tr, y_te = y_enc[idx_tr], y_enc[idx_te]
 
-            # ── Z-score DENTRO do fold ────────────────────────────────────────
             scaler = StandardScaler()
             X_tr_z = scaler.fit_transform(X_tr)
             X_te_z  = scaler.transform(X_te)
-
-            # KNN e SVM usam Z-score; Random Forest não precisa mas não prejudica
             t0 = time.perf_counter()
             modelo.fit(X_tr_z, y_tr)
             metricas["tempo_treino"].append(time.perf_counter() - t0)
@@ -116,7 +85,6 @@ def _avaliar_modelo_kfold(nome, modelo, X: np.ndarray, y: np.ndarray,
                                                     zero_division=0))
             metricas["confusion_matrices"].append(confusion_matrix(y_te, y_pred))
 
-            # F1 por classe
             f1_classes = f1_score(y_te, y_pred, average=None,
                                    labels=classes_enc, zero_division=0)
             for c, f1_c in zip(classes, f1_classes):
@@ -132,21 +100,14 @@ def _avaliar_modelo_kfold(nome, modelo, X: np.ndarray, y: np.ndarray,
     print(f"       F1-Macro  : {f1_med:.4f} ± {f1_std:.4f}")
     print(f"       Tempo/fit : {t_med*1000:.1f} ms")
 
-    # Matriz de confusão agregada (soma de todos os folds)
     cm_agg = np.sum(metricas["confusion_matrices"], axis=0)
     metricas["cm_agregada"] = cm_agg
 
     return metricas
 
 def treinar_e_avaliar(X: pd.DataFrame, y: pd.Series):
-    """
-    Treina e avalia os 3 algoritmos com k-fold estratificado.
-    Retorna dicionário com resultados completos para a Etapa 4.
-    """
     np.random.seed(SEED_FIXA)
     modelos = _criar_modelos()
-
-    # Codifica labels para array numpy
     classes_ordenadas = sorted(y.unique().tolist())
     X_arr = X.values
     y_arr = y.values
@@ -166,7 +127,6 @@ def treinar_e_avaliar(X: pd.DataFrame, y: pd.Series):
         resultados[nome] = metricas
         print()
 
-    # Treina modelo final (no dataset completo) para o relatório de classificação
     resultados = _treinar_modelo_final(resultados, modelos, X_arr, y_arr,
                                        classes_ordenadas)
 
@@ -174,10 +134,6 @@ def treinar_e_avaliar(X: pd.DataFrame, y: pd.Series):
 
 
 def _treinar_modelo_final(resultados, modelos, X_arr, y_arr, classes):
-    """
-    Treina cada modelo no dataset completo (pós-normalização) para gerar
-    o relatório de classificação detalhado por classe.
-    """
     le = LabelEncoder()
     y_enc = le.fit_transform(y_arr)
 

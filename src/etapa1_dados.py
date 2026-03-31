@@ -1,12 +1,3 @@
-"""
-Etapa 1 — Escolha e Compreensão da Base de Dados
-Dataset: Sloan Digital Sky Survey (SDSS) — Classificação Multiclasse
-Tarefa: Classificar objetos celestes em STAR, GALAXY ou QSO (quasar)
-
-Se o arquivo SDSS não estiver disponível localmente, o script baixa
-automaticamente via kaggle ou gera dados sintéticos com mesma estrutura.
-"""
-
 import os
 import numpy as np
 import pandas as pd
@@ -17,7 +8,6 @@ import seaborn as sns
 from sklearn.datasets import make_classification
 
 
-# ── Configuração visual ───────────────────────────────────────────────────────
 PALETTE = {"STAR": "#F5A623", "GALAXY": "#4A90D9", "QSO": "#7B68EE"}
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -25,7 +15,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 def _tentar_carregar_csv() -> pd.DataFrame | None:
-    """Tenta carregar o CSV real do SDSS se existir no diretório."""
     candidatos = [
         "Skyserver_SQL2_27_2018 6_51_39 PM.csv",
         "sdss.csv",
@@ -47,10 +36,6 @@ def _tentar_carregar_csv() -> pd.DataFrame | None:
 
 
 def carregar_e_explorar():
-    """
-    Carrega o dataset, realiza análise exploratória e salva gráficos.
-    Retorna X (features), y (labels), feature_names.
-    """
     print("  Carregando base de dados SDSS...")
     df = _tentar_carregar_csv()
     if df is None:
@@ -59,7 +44,6 @@ def carregar_e_explorar():
             "ou na raiz do projeto."
         )
 
-    # Padroniza nome da coluna alvo
     col_alvo_candidatos = ["class", "Class", "CLASS", "objtype"]
     for c in col_alvo_candidatos:
         if c in df.columns:
@@ -69,13 +53,10 @@ def carregar_e_explorar():
     print(f"\n  Dimensões do dataset : {df.shape[0]} amostras × {df.shape[1]} atributos")
     print(f"  Distribuição de classes:\n{df['class'].value_counts().to_string()}")
 
-    # ── Colunas a descartar (ids e metadados sem poder preditivo) ─────────────
     colunas_drop = ["objid", "specobjid", "run", "rerun", "camcol",
                     "field", "plate", "mjd", "fiberid"]
     colunas_drop = [c for c in colunas_drop if c in df.columns]
     df = df.drop(columns=colunas_drop)
-
-    # Features numéricas
     features = [c for c in df.columns if c != "class" and pd.api.types.is_numeric_dtype(df[c])]
     feature_names = features
 
@@ -88,8 +69,6 @@ def carregar_e_explorar():
     y = df["class"].copy()
     return X, y, feature_names
 
-
-# ── Visualizações exploratórias ───────────────────────────────────────────────
 
 def _plotar_exploratorio(df: pd.DataFrame, features: list):
     _plot_distribuicao_classes(df)
