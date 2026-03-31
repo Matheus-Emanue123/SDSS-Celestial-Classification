@@ -131,4 +131,33 @@ Siga os passos abaixo para reproduzir os experimentos e análises gerados neste 
    ```
    Os gráficos (PNG) e o relatório de métricas (CSV) serão salvos em `output/`.
 
+### Alternativa: Usar Script Automatizado (Recomendado)
+
+Todos os passos acima (venv, dependências, execução) podem ser realizados automaticamente:
+
+**Para Windows:**
+```bash
+# Duplo-clique em run.bat
+# OU via PowerShell/CMD:
+.\run.bat
+```
+
+**Para Linux, Mac ou WSL:**
+```bash
+# Primeiro, torne o script executável:
+chmod +x run.sh
+
+# Depois execute:
+bash run.sh
+# OU:
+./run.sh
+```
+
+O script fará automaticamente:
+1. ✅ Verificar se Python 3 está instalado
+2. ✅ Criar ambiente virtual (`venv`)
+3. ✅ Instalar todas as dependências
+4. ✅ Executar o pipeline completo
+5. ✅ Salvar resultados em `output/`
+
 ---
