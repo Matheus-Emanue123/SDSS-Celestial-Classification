@@ -13,7 +13,7 @@ O SDSS gera um volume massivo de dados de observação do céu profundo. A class
 * **Sobreposição Fotométrica ("Photometric Crowding"):** Bandas de luz frequentemente apresentam densidades sobrepostas entre diferentes classes.
 * **Ruídos e Artefatos:** Erros de leitura de sensores e anomalias instrumentais que não representam fenômenos físicos.
 
-![Distribuição das Classes](graficos/01_distribuicao_classes.png)
+![Distribuição das Classes](output/01_distribuicao_classes.png)
 
 ---
 
@@ -24,24 +24,24 @@ Para garantir que os modelos aprendam padrões físicos reais e não ruídos, im
 ### Análise Exploratória (EDA) e Correlação
 A análise de distribuição e dispersão revelou que características como o `redshift` possuem bimodalidade clara, sendo vitais para separar Quasares. Variáveis de indexação (`obj_ID`, `spec_obj_ID`) não possuem valor físico.
 
-![Histogramas](graficos/02_histogramas.jpg)
-![Dispersão](graficos/03_dispersao.png)
+![Histogramas](output/02_histogramas.png)
+![Dispersão](output/03_dispersao.png)
 
 A Matriz de Correlação de Pearson evidenciou redundâncias críticas que precisavam ser tratadas para otimizar o treinamento:
 * **Redundância Instrumental:** `obj_ID` e `run_ID` (correlação de 1.00).
 * **Redundância Temporal:** `spec_obj_ID` e `MJD` (correlação de 0.97).
 * **Multicolinearidade Fotométrica:** Bandas de luz como `u` e `g`.
 
-![Matriz de Correlação](graficos/04_correlacao.png)
+![Matriz de Correlação](output/04_correlacao.png)
 
 ### Saneamento e Engenharia de Features
 1. **Tratamento de Outliers:** Aplicamos a regra de $\mu \pm 3\sigma$ para remover artefatos instrumentais severos (valores anômalos próximos a -10.000), preservando a integridade das distribuições.
-    * *Antes:* ![Boxplot Antes](graficos/05_boxplot_antes.png)
-    * *Depois:* ![Boxplot Depois](graficos/05_boxplot_depois.png)
+    * *Antes:* ![Boxplot Antes](output/05_boxplot_antes.png)
+    * *Depois:* ![Boxplot Depois](output/05_boxplot_depois.png)
 2. **Normalização (Z-score):** Fundamental para estabilizar o gradiente em redes neurais e evitar que features com grandes grandezas dominem o cálculo de distância no KNN.
 3. **Seleção de Atributos:** Utilizando ANOVA F-Score, mantivemos as features de maior relevância física (como o `redshift`, com score > 100.000) e descartamos metadados irrelevantes.
 
-![Importância das Features](graficos/06_feature_importance.png)
+![Importância das Features](output/06_feature_importance.png)
 
 ---
 
@@ -67,35 +67,35 @@ Adotamos três paradigmas distintos de modelagem, validados através de **Strati
 
 ## 📊 4. Resultados e Avaliação de Desempenho
 
-O **F1-Score (Macro)** foi eleito a métrica principal de avaliação devido ao desbalanceamento das classes, garantindo que o desempenho na classe minoritária (QSO) não fosse ofuscado. Os resultados abaixo refletem a média e desvio padrão de 10 avaliações (2 repetições × 5-fold).
+O **F1-Score (Macro)** foi eleito a métrica principal de avaliação devido ao desbalanceamento das classes, garantindo que o desempenho na classe minoritária (QSO) não fosse ofuscado. Os resultados abaixo refletem a média e desvio padrão de 50 avaliações (5 repetições × 10-fold com seed fixa = 42).
 
 | Modelo | Acurácia Média | F1-Score (Macro) | Tempo Médio/fold |
 | :--- | :--- | :--- | :--- |
-| **Random Forest** | **0.9773 ± 0.0008** | **0.9722 ± 0.0010** | **4953.7 ms** |
-| SVM (RBF, OvO) | 0.9618 ± 0.0007 | 0.9552 ± 0.0009 | 35705.4 ms |
-| KNN | 0.9174 ± 0.0018 | 0.9051 ± 0.0022 | 119.4 ms |
+| **Random Forest** | **0.9774 ± 0.0013** | **0.9723 ± 0.0016** | **7564.0 ms** |
+| SVM (RBF, OvO) | 0.9624 ± 0.0015 | 0.9560 ± 0.0018 | 52637.2 ms |
+| KNN | 0.9197 ± 0.0026 | 0.9077 ± 0.0031 | 146.0 ms |
 
 ### Matrizes de Confusão
 O KNN confundiu 15% das estrelas com galáxias devido ao "photometric crowding". Em contrapartida, Random Forest e SVM atingiram desempenho excelente na classe STAR (≥99.9% recall) e segregação superior para Quasares.
 
-![Matrizes de Confusão](graficos/07_matrizes_confusao.png)
+![Matrizes de Confusão](output/07_matrizes_confusao.png)
 
 ### Estabilidade
-Em 10 avaliações distintas (2 repetições × 5-fold), o Random Forest apresentou a menor dispersão de erro e maior consistência geral, comprovando ser o modelo mais confiável. O SVM, apesar de bom desempenho, sofre com tempo de treinamento proibitivo em datasets desta escala (~96k amostras). O KNN permanece como baseline rápido mas menos preciso.
+Em 50 avaliações distintas (5 repetições × 10-fold), o Random Forest apresentou menor dispersão de erro (±0.0013) e maior consistência geral, comprovando ser o modelo mais confiável para produção. O SVM, embora alcance F1-Macro de 0.9560, sofre com latência de treinamento impraticável (~52.6s por fold), tornando-o inviável para escala desta magnitude (~96k amostras). O KNN permanece como baseline rápido mas com acurácia significativamente menor.
 
-![Comparativo Boxplots](graficos/08_boxplots_comparativo.png)
-![F1 por Classe](graficos/09_f1_por_classe.png)
-![Tempo Computacional](graficos/10_tempo_computacional.png)
+![Comparativo Boxplots](output/08_boxplots_comparativo.png)
+![F1 por Classe](output/09_f1_por_classe.png)
+![Tempo Computacional](output/10_tempo_computacional.png)
 
 ---
 
 ## 🚀 5. Conclusão e Recomendação
 
-O modelo **Random Forest** permanece como o campeão da experimentação, equilibrando desempenho preditivo (F1-Macro: 0.9722) com custo computacional aceitável (~4.95s por fold).
+O modelo **Random Forest** é o campeão inconteste da experimentação, alcançando **F1-Macro de 0.9723** com tempo de treino de apenas 7.6s por fold e a menor variação (±0.0016). Oferece o melhor balanço entre acurácia, estabilidade e eficiência computacional.
 
-O **SVM com kernel RBF e estratégia one-vs-one**, embora alcance F1-Macro respeitável (0.9552), apresenta latência de treinamento impraticável para escala de produção (~35.7s por fold). Isso ilustra um princípio fundamental: nem sempre o algoritmo teoricamente superior é a melhor escolha prática — o Random Forest oferece um balanço superior entre acurácia, estabilidade e eficiência computacional.
+O **SVM com kernel RBF (one-vs-one)**, embora teoricamente sofisticado, demonstra ser impraticável neste contexto: apesar de alcançar F1-Macro de 0.9560, requer **52.6s de treinamento por fold** — ~7 vezes mais que Random Forest. Isso ilustra uma lição crítica em ML: nem sempre o algoritmo mais sofisticado é o mais apropriado. Margem máxima e não-linearidade perduram para dataset de alta dimensionalidade e baixa densidade.
 
-O pipeline demonstra que um pré-processamento rigoroso, seed fixa para reprodutibilidade e validação cruzada estratificada são fundamentos mais determinantes para o sucesso da classificação astronômica do que a mera sofisticação algorítmica.
+O pipeline valida que um **pré-processamento rigoroso** (remoção de features redundantes, tratamento de outliers, Z-score estratificado por fold), uma **seed determinística (42) em todos os componentes estocásticos** e **validação cruzada estratificada** são fundamentos mais críticos que sofisticação algorítmica para o sucesso de classificação astronômica em larga escala.
 
 ---
 
@@ -105,7 +105,7 @@ Siga os passos abaixo para reproduzir os experimentos e análises gerados neste 
 
 1. **Clone o repositório:**
    ```bash
-   git clone [https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git](https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git)
+   git clone [https://github.com/Matheus-Emanue123/SDSS-Celestial-Classification.git](https://github.com/Matheus-Emanue123/SDSS-Celestial-Classification.git)
    cd NOME_DO_REPOSITORIO
    ```
 
@@ -126,17 +126,9 @@ Siga os passos abaixo para reproduzir os experimentos e análises gerados neste 
 
 4. **Execute o pipeline:**
    ```bash
-   # Substitua pelo nome do seu script principal
-   python main.py 
+   cd src/
+   python main.py
    ```
+   Os gráficos (PNG) e o relatório de métricas (CSV) serão salvos em `output/`.
 
 ---
-
-## 📞 7. Contato
-
-Sinta-se à vontade para entrar em contato caso tenha dúvidas sobre o projeto, o pipeline de dados ou os resultados obtidos!
-
-* **Nome:** [Seu Nome Aqui]
-* **LinkedIn:** [Link para o seu perfil](https://linkedin.com/in/seu-perfil)
-* **GitHub:** [Link para o seu GitHub](https://github.com/SEU_USUARIO)
-* **E-mail:** [seu-email@exemplo.com](mailto:seu-email@exemplo.com)
